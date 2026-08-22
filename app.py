@@ -258,11 +258,11 @@ if page == "Rotational Scan":
         # Display summary
         st.markdown(f"**📋 Showing {len(filtered_df)} of {len(df)} stocks**")
         
-        # Display table
+        # Display table with Status first
         display_columns = [
-            'ticker', 'name', 'sector', 'price', 'ytd_return', 'one_month_return', 
+            'status', 'ticker', 'name', 'sector', 'price', 'ytd_return', 'one_month_return', 
             'two_week_return', 'rs_score', 'momentum_persistence', 'vol_30d', 
-            'atr_pct', 'entry_score', 'status'
+            'atr_pct', 'entry_score'
         ]
         
         display_df = filtered_df[display_columns].copy()
@@ -278,10 +278,10 @@ if page == "Rotational Scan":
         display_df['atr_pct'] = display_df['atr_pct'].round(2)
         display_df['entry_score'] = display_df['entry_score'].round(1)
         
-        # Rename columns for display
+        # Rename columns for display with emoji indicators
         display_df.columns = [
-            'Ticker', 'Name', 'Sector', 'Price', 'YTD %', '1M %', '2W %',
-            'RS', 'Persistence', 'Vol 30d %', 'ATR %', 'Entry Score', 'Status'
+            '🏷️ Status', '📈 Ticker', '📛 Name', '🏢 Sector', '💰 Price', '📊 YTD %', '📈 1M %', '📉 2W %',
+            '🎯 RS', '📊 Persistence', '📉 Vol 30d %', '📏 ATR %', '⭐ Entry Score'
         ]
         
         # Enhanced color coding
@@ -331,10 +331,10 @@ if page == "Rotational Scan":
             except:
                 return ''
         
-        styled_df = display_df.style.map(color_status, subset=['Status'])
-        styled_df = styled_df.map(color_returns, subset=['YTD %', '1M %', '2W %'])
-        styled_df = styled_df.map(color_scores, subset=['RS', 'Persistence', 'Entry Score'])
-        styled_df = styled_df.map(color_volatility, subset=['Vol 30d %', 'ATR %'])
+        styled_df = display_df.style.map(color_status, subset=['🏷️ Status'])
+        styled_df = styled_df.map(color_returns, subset=['📊 YTD %', '📈 1M %', '📉 2W %'])
+        styled_df = styled_df.map(color_scores, subset=['🎯 RS', '📊 Persistence', '⭐ Entry Score'])
+        styled_df = styled_df.map(color_volatility, subset=['📉 Vol 30d %', '📏 ATR %'])
         
         # Add hover effect and better styling
         styled_df = styled_df.set_properties(**{
@@ -345,6 +345,35 @@ if page == "Rotational Scan":
         })
         
         st.dataframe(styled_df, use_container_width=True, height=600)
+        
+        # Add color legend
+        st.markdown("---")
+        st.markdown("### 🎨 Color Legend")
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            st.markdown("**Status Colors:**")
+            st.markdown("🟢 **Qualified** - Meets all criteria")
+            st.markdown("🟡 **Watch** - Partially meets criteria")
+            st.markdown("🔴 **Excluded** - Does not meet criteria")
+        
+        with col2:
+            st.markdown("**Score Colors:**")
+            st.markdown("🟢 **80+** - Excellent")
+            st.markdown("🟡 **60-79** - Good")
+            st.markdown("🟠 **40-59** - Fair")
+            st.markdown("🔴 **<40** - Poor")
+        
+        with col3:
+            st.markdown("**Return Colors:**")
+            st.markdown("🟢 **>0%** - Positive")
+            st.markdown("🔴 **<0%** - Negative")
+        
+        with col4:
+            st.markdown("**Volatility Colors:**")
+            st.markdown("🟢 **<25%** - Low")
+            st.markdown("🟡 **25-35%** - Medium")
+            st.markdown("🔴 **>35%** - High")
 
 # Page: Ticker Detail
 elif page == "Ticker Detail":
