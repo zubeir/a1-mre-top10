@@ -167,7 +167,7 @@ if page == "Rotational Scan":
             else:
                 return 'color: #cc0000; font-weight: bold'
         
-        styled_df = display_df.style.applymap(color_status, subset=['Status'])
+        styled_df = display_df.style.map(color_status, subset=['Status'])
         
         st.dataframe(styled_df, use_container_width=True, height=600)
 
