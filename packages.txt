@@ -1,2 +1,0 @@
-# Additional system packages for Streamlit Cloud (if needed)
-# Leave empty for now as all dependencies are in requirements.txt
