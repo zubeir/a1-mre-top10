@@ -331,14 +331,24 @@ if page == "Rotational Scan":
             except:
                 return ''
         
-        styled_df = display_df.style.map(color_status, subset=['🏷️ Status'])
+        # Row-level highlighting based on status
+        def highlight_row(row):
+            status = row['🏷️ Status']
+            if status == 'qualified':
+                return ['background-color: #d1fae5'] * len(row)
+            elif status == 'watch':
+                return ['background-color: #fef3c7'] * len(row)
+            else:
+                return ['background-color: #fee2e2'] * len(row)
+        
+        styled_df = display_df.style.apply(highlight_row, axis=1)
+        styled_df = styled_df.map(color_status, subset=['🏷️ Status'])
         styled_df = styled_df.map(color_returns, subset=['📊 YTD %', '📈 1M %', '📉 2W %'])
         styled_df = styled_df.map(color_scores, subset=['🎯 RS', '📊 Persistence', '⭐ Entry Score'])
         styled_df = styled_df.map(color_volatility, subset=['📉 Vol 30d %', '📏 ATR %'])
         
         # Add hover effect and better styling
         styled_df = styled_df.set_properties(**{
-            'background-color': '#ffffff',
             'color': '#1f2937',
             'font-size': '14px',
             'border': '1px solid #e5e7eb'
