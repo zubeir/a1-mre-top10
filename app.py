@@ -3,6 +3,7 @@ import pandas as pd
 import plotly.graph_objects as go
 from datetime import datetime
 import sys
+import time
 
 # Add current directory to path for imports
 sys.path.append('.')
@@ -12,11 +13,34 @@ from database import (
     get_positions, create_position, close_position, update_position_price,
     get_sp500_universe, save_universe, save_metrics, log_event
 )
-from data_fetcher import get_sp500_tickers, get_price_data, get_latest_price
-from metrics import compute_projected_gain
+from data_fetcher import get_sp500_tickers, get_price_data, get_latest_price, batch_get_prices
+from metrics import compute_all_metrics, compute_projected_gain
+from mock_data import generate_all_mock_metrics
 
 # Initialize database
 init_database()
+
+# Auto-populate data if database is empty
+def ensure_data_populated():
+    """Check if data exists, populate with mock data if empty."""
+    metrics = get_latest_metrics()
+    if not metrics:
+        with st.spinner("Initializing dashboard with sample data..."):
+            # Get sample tickers
+            ticker_data = get_sp500_tickers()
+            save_universe(ticker_data)
+            
+            # Use mock data for reliability
+            all_metrics = generate_all_mock_metrics(ticker_data)
+            save_metrics(all_metrics)
+            
+            log_event('auto_init', {
+                'timestamp': datetime.now().isoformat(),
+                'tickers_processed': len(all_metrics)
+            })
+            st.success(f"Initialized with {len(all_metrics)} sample stocks")
+
+ensure_data_populated()
 
 # Page configuration
 st.set_page_config(
