@@ -50,19 +50,126 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS
+# Custom CSS for enhanced UX
 st.markdown("""
     <style>
-    .stApp { background-color: #ffffff; }
-    .metric-card { 
-        background-color: #f0f2f6; 
-        padding: 20px; 
-        border-radius: 10px; 
-        margin: 10px 0;
+    /* Main app styling */
+    .stApp {
+        background-color: #f8f9fa;
     }
-    .status-qualified { color: #00cc00; font-weight: bold; }
-    .status-watch { color: #ff9900; font-weight: bold; }
-    .status-excluded { color: #cc0000; font-weight: bold; }
+    
+    /* Header styling */
+    h1 {
+        color: #1e3a5f;
+        font-weight: 700;
+        border-bottom: 3px solid #3b82f6;
+        padding-bottom: 10px;
+    }
+    
+    h2 {
+        color: #2c5282;
+        font-weight: 600;
+        margin-top: 30px;
+    }
+    
+    h3 {
+        color: #4a5568;
+        font-weight: 500;
+    }
+    
+    /* Metric cards */
+    .metric-card { 
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px; 
+        border-radius: 12px; 
+        margin: 10px 0;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Status colors */
+    .status-qualified { 
+        color: #059669; 
+        font-weight: bold; 
+        background-color: #d1fae5;
+        padding: 4px 12px;
+        border-radius: 20px;
+        display: inline-block;
+    }
+    .status-watch { 
+        color: #d97706; 
+        font-weight: bold;
+        background-color: #fef3c7;
+        padding: 4px 12px;
+        border-radius: 20px;
+        display: inline-block;
+    }
+    .status-excluded { 
+        color: #dc2626; 
+        font-weight: bold;
+        background-color: #fee2e2;
+        padding: 4px 12px;
+        border-radius: 20px;
+        display: inline-block;
+    }
+    
+    /* Info boxes */
+    .stInfo {
+        background-color: #e0f2fe;
+        border-left: 4px solid #0284c7;
+    }
+    
+    .stWarning {
+        background-color: #fef3c7;
+        border-left: 4px solid #f59e0b;
+    }
+    
+    .stSuccess {
+        background-color: #d1fae5;
+        border-left: 4px solid #10b981;
+    }
+    
+    .stError {
+        background-color: #fee2e2;
+        border-left: 4px solid #ef4444;
+    }
+    
+    /* Dataframe styling */
+    .dataframe {
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    
+    /* Button styling */
+    .stButton>button {
+        background-color: #3b82f6;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 10px 20px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .stButton>button:hover {
+        background-color: #2563eb;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    }
+    
+    /* Sidebar styling */
+    .css-1d391kg {
+        background-color: #1e3a5f;
+    }
+    
+    /* Filter section */
+    .filter-section {
+        background-color: white;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        margin-bottom: 20px;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -93,23 +200,42 @@ if page == "Rotational Scan":
     else:
         df = pd.DataFrame(metrics)
         
-        # Filters
+        # Summary cards
+        qualified_count = len([m for m in metrics if m['status'] == 'qualified'])
+        watch_count = len([m for m in metrics if m['status'] == 'watch'])
+        excluded_count = len([m for m in metrics if m['status'] == 'excluded'])
+        
         col1, col2, col3, col4 = st.columns(4)
-        
         with col1:
-            sectors = ['All'] + sorted(df['sector'].unique())
-            selected_sector = st.selectbox("Sector", sectors)
-        
+            st.metric("📊 Total Stocks", len(df))
         with col2:
-            rs_min = st.slider("RS Minimum", 0, 100, 0)
-        
+            st.metric("✅ Qualified", qualified_count, delta_color="normal")
         with col3:
-            vol_regimes = ['All', 'low', 'medium', 'high']
-            selected_vol = st.multiselect("Volatility Regime", vol_regimes, default=['All'])
-        
+            st.metric("⚠️ Watch", watch_count, delta_color="normal")
         with col4:
-            statuses = ['All', 'qualified', 'watch', 'excluded']
-            selected_status = st.multiselect("Status", statuses, default=['qualified', 'watch'])
+            st.metric("❌ Excluded", excluded_count, delta_color="normal")
+        
+        st.markdown("---")
+        
+        # Filters section with container
+        with st.container():
+            st.subheader("🔍 Filters")
+            col1, col2, col3, col4 = st.columns(4)
+            
+            with col1:
+                sectors = ['All'] + sorted(df['sector'].unique())
+                selected_sector = st.selectbox("🏢 Sector", sectors)
+            
+            with col2:
+                rs_min = st.slider("📈 RS Minimum", 0, 100, 60, help="Minimum Relative Strength score (60+ for watch, 80+ for qualified)")
+            
+            with col3:
+                vol_regimes = ['All', 'low', 'medium', 'high']
+                selected_vol = st.multiselect("📊 Volatility Regime", vol_regimes, default=['All'])
+            
+            with col4:
+                statuses = ['All', 'qualified', 'watch', 'excluded']
+                selected_status = st.multiselect("🏷️ Status", statuses, default=['qualified', 'watch'])
         
         # Apply filters
         filtered_df = df.copy()
@@ -130,7 +256,7 @@ if page == "Rotational Scan":
         filtered_df = filtered_df.sort_values('entry_score', ascending=False)
         
         # Display summary
-        st.markdown(f"**Showing {len(filtered_df)} of {len(df)} stocks**")
+        st.markdown(f"**📋 Showing {len(filtered_df)} of {len(df)} stocks**")
         
         # Display table
         display_columns = [
@@ -158,42 +284,95 @@ if page == "Rotational Scan":
             'RS', 'Persistence', 'Vol 30d %', 'ATR %', 'Entry Score', 'Status'
         ]
         
-        # Color status column
+        # Enhanced color coding
         def color_status(val):
             if val == 'qualified':
-                return 'color: #00cc00; font-weight: bold'
+                return 'background-color: #d1fae5; color: #059669; font-weight: bold; padding: 4px; border-radius: 4px;'
             elif val == 'watch':
-                return 'color: #ff9900; font-weight: bold'
+                return 'background-color: #fef3c7; color: #d97706; font-weight: bold; padding: 4px; border-radius: 4px;'
             else:
-                return 'color: #cc0000; font-weight: bold'
+                return 'background-color: #fee2e2; color: #dc2626; font-weight: bold; padding: 4px; border-radius: 4px;'
+        
+        def color_returns(val):
+            try:
+                val = float(val)
+                if val > 0:
+                    return 'color: #059669; font-weight: 600'
+                elif val < 0:
+                    return 'color: #dc2626; font-weight: 600'
+                else:
+                    return 'color: #6b7280'
+            except:
+                return ''
+        
+        def color_scores(val):
+            try:
+                val = float(val)
+                if val >= 80:
+                    return 'background-color: #d1fae5; color: #059669; font-weight: bold'
+                elif val >= 60:
+                    return 'background-color: #fef3c7; color: #d97706; font-weight: bold'
+                elif val >= 40:
+                    return 'background-color: #fef9c3; color: #ca8a04'
+                else:
+                    return 'background-color: #fee2e2; color: #dc2626'
+            except:
+                return ''
+        
+        def color_volatility(val):
+            try:
+                val = float(val)
+                if val < 25:
+                    return 'color: #059669; font-weight: 500'
+                elif val < 35:
+                    return 'color: #d97706; font-weight: 500'
+                else:
+                    return 'color: #dc2626; font-weight: 600'
+            except:
+                return ''
         
         styled_df = display_df.style.map(color_status, subset=['Status'])
+        styled_df = styled_df.map(color_returns, subset=['YTD %', '1M %', '2W %'])
+        styled_df = styled_df.map(color_scores, subset=['RS', 'Persistence', 'Entry Score'])
+        styled_df = styled_df.map(color_volatility, subset=['Vol 30d %', 'ATR %'])
+        
+        # Add hover effect and better styling
+        styled_df = styled_df.set_properties(**{
+            'background-color': '#ffffff',
+            'color': '#1f2937',
+            'font-size': '14px',
+            'border': '1px solid #e5e7eb'
+        })
         
         st.dataframe(styled_df, use_container_width=True, height=600)
 
 # Page: Ticker Detail
 elif page == "Ticker Detail":
     st.title("📈 Ticker Detail")
+    st.markdown("Deep dive into individual stock metrics and entry decision support")
     
     # Ticker input
-    ticker = st.text_input("Enter Ticker Symbol", value="AAPL").upper()
+    ticker = st.text_input("🔍 Enter Ticker Symbol", value="AAPL").upper()
     
     if ticker:
         metrics = get_ticker_metrics(ticker)
         
         if not metrics:
-            st.error(f"No data found for ticker {ticker}")
+            st.error(f"❌ No data found for ticker {ticker}")
         else:
-            # Header
-            col1, col2, col3 = st.columns(3)
+            # Header with enhanced styling
+            st.markdown("---")
+            col1, col2, col3, col4 = st.columns(4)
             with col1:
-                st.metric("Ticker", metrics['ticker'])
+                st.metric("🏷️ Ticker", metrics['ticker'])
             with col2:
-                st.metric("Name", metrics['name'])
+                st.metric("📛 Name", metrics['name'])
             with col3:
-                st.metric("Sector", metrics['sector'])
+                st.metric("🏢 Sector", metrics['sector'])
+            with col4:
+                st.metric("💰 Current Price", f"${metrics['price']:.2f}")
             
-            st.metric("Current Price", f"${metrics['price']:.2f}")
+            st.markdown("---")
             
             # Price chart
             price_data = get_price_data(ticker, period="1y")
@@ -201,16 +380,18 @@ elif page == "Ticker Detail":
             if not price_data.empty:
                 fig = go.Figure()
                 
-                # Price line
+                # Price line with gradient fill
                 fig.add_trace(go.Scatter(
                     x=price_data.index,
                     y=price_data['Close'],
                     mode='lines',
                     name='Price',
-                    line=dict(color='#1f77b4', width=2)
+                    line=dict(color='#3b82f6', width=2),
+                    fill='tozeroy',
+                    fillcolor='rgba(59, 130, 246, 0.1)'
                 ))
                 
-                # Moving averages
+                # Moving averages with better colors
                 if len(price_data) >= 20:
                     ma20 = price_data['Close'].rolling(window=20).mean()
                     fig.add_trace(go.Scatter(
@@ -218,7 +399,7 @@ elif page == "Ticker Detail":
                         y=ma20,
                         mode='lines',
                         name='20-day MA',
-                        line=dict(color='#ff7f0e', width=1)
+                        line=dict(color='#f59e0b', width=2)
                     ))
                 
                 if len(price_data) >= 50:
@@ -228,7 +409,7 @@ elif page == "Ticker Detail":
                         y=ma50,
                         mode='lines',
                         name='50-day MA',
-                        line=dict(color='#2ca02c', width=1)
+                        line=dict(color='#10b981', width=2)
                     ))
                 
                 if len(price_data) >= 200:
@@ -238,90 +419,114 @@ elif page == "Ticker Detail":
                         y=ma200,
                         mode='lines',
                         name='200-day MA',
-                        line=dict(color='#d62728', width=1)
+                        line=dict(color='#ef4444', width=2)
                     ))
                 
                 fig.update_layout(
-                    title=f"{ticker} Price History",
+                    title=f"📊 {ticker} Price History",
                     xaxis_title="Date",
                     yaxis_title="Price ($)",
                     hovermode='x unified',
-                    height=400
+                    height=450,
+                    plot_bgcolor='rgba(255, 255, 255, 0.8)',
+                    paper_bgcolor='rgba(255, 255, 255, 0.8)',
+                    font=dict(size=12)
                 )
                 
                 st.plotly_chart(fig, use_container_width=True)
             
-            # Metrics panels
+            # Metrics panels with enhanced styling
+            st.markdown("---")
             col1, col2 = st.columns(2)
             
             with col1:
-                st.subheader("Momentum")
-                st.metric("YTD Return", f"{metrics['ytd_return']:.2f}%")
-                st.metric("1-Month Return", f"{metrics['one_month_return']:.2f}%")
-                st.metric("2-Week Return", f"{metrics['two_week_return']:.2f}%")
-                st.metric("Momentum Persistence", f"{metrics['momentum_persistence']:.1f}")
+                st.markdown("### 📈 Momentum")
+                ytd_color = "🟢" if metrics['ytd_return'] > 0 else "🔴"
+                one_month_color = "🟢" if metrics['one_month_return'] > 0 else "🔴"
+                two_week_color = "🟢" if metrics['two_week_return'] > 0 else "🔴"
                 
-                st.subheader("Relative Strength")
-                st.metric("RS Score", f"{metrics['rs_score']:.1f}")
-                st.metric("RS Trend", metrics['rs_trend'].title())
+                st.metric(f"{ytd_color} YTD Return", f"{metrics['ytd_return']:.2f}%")
+                st.metric(f"{one_month_color} 1-Month Return", f"{metrics['one_month_return']:.2f}%")
+                st.metric(f"{two_week_color} 2-Week Return", f"{metrics['two_week_return']:.2f}%")
+                st.metric("📊 Momentum Persistence", f"{metrics['momentum_persistence']:.1f}")
+                
+                st.markdown("### 🎯 Relative Strength")
+                rs_color = "🟢" if metrics['rs_score'] >= 80 else "🟡" if metrics['rs_score'] >= 60 else "🔴"
+                st.metric(f"{rs_color} RS Score", f"{metrics['rs_score']:.1f}")
+                trend_emoji = "📈" if metrics['rs_trend'] == 'rising' else "➡️" if metrics['rs_trend'] == 'flat' else "📉"
+                st.metric(f"{trend_emoji} RS Trend", metrics['rs_trend'].title())
             
             with col2:
-                st.subheader("Volatility")
-                st.metric("30-Day Volatility", f"{metrics['vol_30d']:.2f}%")
-                st.metric("ATR %", f"{metrics['atr_pct']:.2f}%")
-                st.metric("Volatility Regime", metrics['vol_regime'].title())
+                st.markdown("### 📊 Volatility")
+                vol_color = "🟢" if metrics['vol_regime'] == 'low' else "🟡" if metrics['vol_regime'] == 'medium' else "🔴"
+                st.metric("📉 30-Day Volatility", f"{metrics['vol_30d']:.2f}%")
+                st.metric("📏 ATR %", f"{metrics['atr_pct']:.2f}%")
+                st.metric(f"{vol_color} Volatility Regime", metrics['vol_regime'].title())
                 
-                st.subheader("Earnings")
+                st.markdown("### 📅 Earnings")
                 if metrics['earnings_date']:
+                    earnings_emoji = "⚠️" if metrics['days_to_earnings'] and metrics['days_to_earnings'] <= 10 else "✅"
                     st.metric("Earnings Date", metrics['earnings_date'])
-                    st.metric("Days to Earnings", metrics['days_to_earnings'])
+                    st.metric(f"{earnings_emoji} Days to Earnings", metrics['days_to_earnings'])
                 else:
-                    st.info("Earnings date not available")
+                    st.info("ℹ️ Earnings date not available")
             
-            # Entry decision box
-            st.subheader("Entry Decision")
+            # Entry decision box with enhanced styling
+            st.markdown("---")
+            st.markdown("### 🎯 Entry Decision")
             
             col1, col2 = st.columns(2)
             
             with col1:
-                st.metric("Entry Score", f"{metrics['entry_score']:.1f}")
-                status_class = f"status-{metrics['status']}"
-                st.markdown(f"<span class='{status_class}'>Status: {metrics['status'].upper()}</span>", 
-                           unsafe_allow_html=True)
+                # Entry score with color coding
+                score_color = "🟢" if metrics['entry_score'] >= 75 else "🟡" if metrics['entry_score'] >= 60 else "🔴"
+                st.metric(f"{score_color} Entry Score", f"{metrics['entry_score']:.1f}")
+                
+                # Status with badge
+                status_emoji = "✅" if metrics['status'] == 'qualified' else "⚠️" if metrics['status'] == 'watch' else "❌"
+                status_bg = "#d1fae5" if metrics['status'] == 'qualified' else "#fef3c7" if metrics['status'] == 'watch' else "#fee2e2"
+                status_text_color = "#059669" if metrics['status'] == 'qualified' else "#d97706" if metrics['status'] == 'watch' else "#dc2626"
+                st.markdown(
+                    f'<div style="background-color: {status_bg}; color: {status_text_color}; '
+                    f'padding: 10px; border-radius: 8px; text-align: center; font-weight: bold; font-size: 18px;">'
+                    f'{status_emoji} Status: {metrics["status"].upper()}</div>',
+                    unsafe_allow_html=True
+                )
             
             with col2:
-                st.subheader("Qualification Tags")
+                st.markdown("#### 📋 Qualification Tags")
                 tags = []
                 if metrics['rs_score'] >= 80:
-                    tags.append("✅ Strong RS (RS ≥ 80)")
+                    tags.append("✅ **Strong RS** (RS ≥ 80)")
                 else:
-                    tags.append("❌ Weak RS")
+                    tags.append("❌ **Weak RS**")
                 
                 if metrics['momentum_persistence'] >= 70:
-                    tags.append("✅ Persistent momentum (≥ 70)")
+                    tags.append("✅ **Persistent momentum** (≥ 70)")
                 else:
-                    tags.append("❌ Low persistence")
+                    tags.append("❌ **Low persistence**")
                 
                 if metrics['vol_regime'] == 'high':
-                    tags.append("⚠ High volatility")
+                    tags.append("⚠️ **High volatility**")
                 else:
-                    tags.append("✅ Acceptable volatility")
+                    tags.append("✅ **Acceptable volatility**")
                 
                 if metrics['days_to_earnings'] and metrics['days_to_earnings'] <= 10:
-                    tags.append("⚠ Earnings soon (≤ 10 days)")
+                    tags.append("⚠️ **Earnings soon** (≤ 10 days)")
                 else:
-                    tags.append("✅ Earnings not imminent")
+                    tags.append("✅ **Earnings not imminent**")
                 
                 if metrics['entry_score'] >= 75:
-                    tags.append("✅ Entry score above threshold")
+                    tags.append("✅ **Entry score above threshold**")
                 else:
-                    tags.append("❌ Entry score below threshold")
+                    tags.append("❌ **Entry score below threshold**")
                 
                 for tag in tags:
                     st.markdown(f"- {tag}")
             
-            # Position actions
-            st.subheader("Position Actions")
+            # Position actions with enhanced styling
+            st.markdown("---")
+            st.markdown("### 💼 Position Actions")
             
             # Check if position exists
             positions = get_positions(status='open')
@@ -331,20 +536,20 @@ elif page == "Ticker Detail":
             
             with col1:
                 if not existing_position:
-                    if st.button("Open Position", key=f"open_{ticker}"):
+                    if st.button("🚀 Open Position", key=f"open_{ticker}", type="primary"):
                         create_position(ticker, metrics['price'], metrics['rs_trend'], metrics['vol_regime'])
-                        st.success(f"Position opened for {ticker} at ${metrics['price']:.2f}")
+                        st.success(f"✅ Position opened for {ticker} at ${metrics['price']:.2f}")
                         st.rerun()
                 else:
-                    st.info(f"Position already open for {ticker}")
+                    st.info(f"📊 Position already open for {ticker}")
             
             with col2:
                 if existing_position:
-                    if st.button("Mark Exit", key=f"exit_{ticker}"):
+                    if st.button("🚪 Mark Exit", key=f"exit_{ticker}"):
                         current_price = get_latest_price(ticker)
                         if current_price:
                             close_position(existing_position['id'], current_price, "Manual exit")
-                            st.success(f"Position closed for {ticker} at ${current_price:.2f}")
+                            st.success(f"✅ Position closed for {ticker} at ${current_price:.2f}")
                             st.rerun()
 
 # Page: Positions & Risk
@@ -352,9 +557,23 @@ elif page == "Positions & Risk":
     st.title("⚠️ Positions & Risk")
     st.markdown("Monitor open positions and risk signals")
     
-    # Update prices for open positions
+    # Summary cards
     open_positions = get_positions(status='open')
+    exit_required = get_positions(status='exit_required')
     
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("📊 Open Positions", len(open_positions))
+    with col2:
+        st.metric("🚨 Exit Required", len(exit_required), delta_color="inverse")
+    with col3:
+        total_pnl = sum([pos['pnl_pct'] for pos in open_positions]) if open_positions else 0
+        pnl_color = "🟢" if total_pnl > 0 else "🔴"
+        st.metric(f"{pnl_color} Total P&L", f"{total_pnl:.2f}%")
+    
+    st.markdown("---")
+    
+    # Update prices for open positions
     for pos in open_positions:
         current_price = get_latest_price(pos['ticker'])
         if current_price:
@@ -367,9 +586,9 @@ elif page == "Positions & Risk":
     all_active = open_positions + exit_required
     
     if not all_active:
-        st.info("No open positions")
+        st.info("ℹ️ No open positions")
     else:
-        st.markdown(f"**{len(all_active)} Active Position(s)**")
+        st.markdown(f"### 📋 {len(all_active)} Active Position(s)")
         
         # Create dataframe
         positions_data = []
@@ -388,35 +607,58 @@ elif page == "Positions & Risk":
         
         df = pd.DataFrame(positions_data)
         
-        # Color coding
+        # Enhanced color coding
         def highlight_row(row):
             if row['Status'] == 'Exit Required':
-                return ['background-color: #ffcccc'] * len(row)
+                return ['background-color: #fee2e2; color: #dc2626; font-weight: bold'] * len(row)
             elif row['RS Trend'] == 'Falling' or row['Vol Regime'] == 'High':
-                return ['background-color: #fff4cc'] * len(row)
+                return ['background-color: #fef3c7; color: #d97706'] * len(row)
             return [''] * len(row)
         
+        def color_pnl(val):
+            try:
+                val = float(val.replace('%', ''))
+                if val > 0:
+                    return 'color: #059669; font-weight: bold'
+                elif val < 0:
+                    return 'color: #dc2626; font-weight: bold'
+                else:
+                    return 'color: #6b7280'
+            except:
+                return ''
+        
         styled_df = df.style.apply(highlight_row, axis=1)
+        styled_df = styled_df.map(color_pnl, subset=['P&L %'])
+        styled_df = styled_df.set_properties(**{
+            'background-color': '#ffffff',
+            'color': '#1f2937',
+            'font-size': '14px',
+            'border': '1px solid #e5e7eb'
+        })
+        
         st.dataframe(styled_df, use_container_width=True)
         
-        # Exit actions
-        st.subheader("Exit Actions")
+        # Exit actions with enhanced styling
+        st.markdown("---")
+        st.markdown("### 🚨 Exit Actions")
         
         for pos in exit_required:
-            col1, col2, col3 = st.columns([2, 2, 1])
-            
-            with col1:
-                st.warning(f"⚠️ {pos['ticker']} - Stop loss triggered!")
-                st.markdown(f"Current: ${pos['current_price']:.2f} | Stop: ${pos['stop_price']:.2f}")
-            
-            with col2:
-                st.markdown(f"P&L: {pos['pnl_pct']:.2f}%")
-            
-            with col3:
-                if st.button("Confirm Exit", key=f"confirm_{pos['id']}"):
-                    close_position(pos['id'], pos['current_price'], "5_percent_rule")
-                    st.success(f"Position closed for {pos['ticker']}")
-                    st.rerun()
+            with st.container():
+                col1, col2, col3 = st.columns([2, 2, 1])
+                
+                with col1:
+                    st.error(f"🚨 {pos['ticker']} - Stop loss triggered!")
+                    st.markdown(f"Current: **${pos['current_price']:.2f}** | Stop: **${pos['stop_price']:.2f}**")
+                
+                with col2:
+                    pnl_color = "🟢" if pos['pnl_pct'] > 0 else "🔴"
+                    st.markdown(f"{pnl_color} P&L: **{pos['pnl_pct']:.2f}%**")
+                
+                with col3:
+                    if st.button("✅ Confirm Exit", key=f"confirm_{pos['id']}", type="primary"):
+                        close_position(pos['id'], pos['current_price'], "5_percent_rule")
+                        st.success(f"✅ Position closed for {pos['ticker']}")
+                        st.rerun()
 
 # Page: Performance & Modeling
 elif page == "Performance & Modeling":
@@ -427,12 +669,25 @@ elif page == "Performance & Modeling":
     metrics = get_latest_metrics()
     qualified = [m for m in metrics if m['status'] == 'qualified'] if metrics else []
     
+    # Summary cards
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("📊 Qualified Stocks", len(qualified))
+    with col2:
+        watch_count = len([m for m in metrics if m['status'] == 'watch']) if metrics else 0
+        st.metric("⚠️ Watch List", watch_count)
+    with col3:
+        excluded_count = len([m for m in metrics if m['status'] == 'excluded']) if metrics else 0
+        st.metric("❌ Excluded", excluded_count)
+    
+    st.markdown("---")
+    
     if not qualified:
-        st.info("No qualified stocks available")
+        st.info("ℹ️ No qualified stocks available")
     else:
-        # Projected gain modeling table
-        st.subheader("Projected Gain Modeling (Qualified Stocks)")
-        st.markdown("*Modelled projections only - not financial advice*")
+        # Projected gain modeling table with enhanced styling
+        st.markdown("### 🎯 Projected Gain Modeling (Qualified Stocks)")
+        st.warning("⚠️ *Modelled projections only - not financial advice*")
         
         modeling_data = []
         for m in qualified:
@@ -454,22 +709,56 @@ elif page == "Performance & Modeling":
             })
         
         df_model = pd.DataFrame(modeling_data)
-        st.dataframe(df_model, use_container_width=True)
+        
+        # Color coding for confidence
+        def color_confidence(val):
+            if val == 'High':
+                return 'background-color: #d1fae5; color: #059669; font-weight: bold'
+            elif val == 'Medium':
+                return 'background-color: #fef3c7; color: #d97706; font-weight: bold'
+            else:
+                return 'background-color: #fee2e2; color: #dc2626; font-weight: bold'
+        
+        def color_gain(val):
+            try:
+                # Extract the center value from the range
+                parts = val.replace('%', '').split(' to ')
+                if len(parts) == 2:
+                    center = (float(parts[0]) + float(parts[1])) / 2
+                    if center > 0:
+                        return 'color: #059669; font-weight: bold'
+                    elif center < 0:
+                        return 'color: #dc2626; font-weight: bold'
+            except:
+                pass
+            return ''
+        
+        styled_model = df_model.style.map(color_confidence, subset=['Confidence'])
+        styled_model = styled_model.map(color_gain, subset=['Projected Gain Band'])
+        styled_model = styled_model.set_properties(**{
+            'background-color': '#ffffff',
+            'color': '#1f2937',
+            'font-size': '14px',
+            'border': '1px solid #e5e7eb'
+        })
+        
+        st.dataframe(styled_model, use_container_width=True)
         
         # Summary stats (placeholder - would need historical trade data)
-        st.subheader("Performance Summary")
+        st.markdown("---")
+        st.markdown("### 📈 Performance Summary")
         col1, col2, col3 = st.columns(3)
         
         with col1:
-            st.metric("Total Return", "N/A", help="Requires historical trade data")
+            st.metric("📊 Total Return", "N/A", help="Requires historical trade data")
         
         with col2:
-            st.metric("Max Drawdown", "N/A", help="Requires historical trade data")
+            st.metric("📉 Max Drawdown", "N/A", help="Requires historical trade data")
         
         with col3:
-            st.metric("Win Rate", "N/A", help="Requires historical trade data")
+            st.metric("🎯 Win Rate", "N/A", help="Requires historical trade data")
         
-        st.info("Performance metrics will be populated as trade history accumulates")
+        st.info("ℹ️ Performance metrics will be populated as trade history accumulates")
 
 # Footer
 st.markdown("---")
